@@ -61,7 +61,6 @@ class PublicUserApiTests(TestCase):
             "password": "test@12345",
         }
         create_user(**payload)
-        print(TOKEN_URL)
         res = self.client.post(TOKEN_URL, payload)
         self.assertIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
