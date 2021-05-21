@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import IngredientSerializer, RecepieSerializer, TagSerializer
 from core.models import Ingredient, Recepie, Tag
 
+from recepie import serializers
+
 
 class BaseRecepieAttrViewSet(viewsets.GenericViewSet,
                              mixins.ListModelMixin,
@@ -42,3 +44,10 @@ class RecepieViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve the recepies for the authenticated user only"""
         return self.queryset.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        """Return appropriate serializer class"""
+        if self.action == "retrieve":
+            return serializers.RecepieDetailSerializer
+
+        return self.serializer_class

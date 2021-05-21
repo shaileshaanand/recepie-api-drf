@@ -45,3 +45,9 @@ class RecepieSerializer(serializers.ModelSerializer):
             "link"
         )
         read_only_fields = ("id",)
+
+
+class RecepieDetailSerializer(RecepieSerializer):
+    """Serialize a Recepie Detail"""
+    ingredients = IngredientSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
