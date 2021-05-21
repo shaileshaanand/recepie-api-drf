@@ -12,15 +12,15 @@ from ..serializers import RecepieSerializer, RecepieDetailSerializer
 RECEPIES_URL = reverse("recepie:recepie-list")
 
 
-def detail_url(recepie_id):
+def detail_url(recepie_id) -> str:
     return reverse("recepie:recepie-detail", args=[recepie_id])
 
 
-def sample_tag(user, name="Main Course"):
+def sample_tag(user, name="Main Course") -> Tag:
     return Tag.objects.create(user=user, name=name)
 
 
-def sample_ingredient(user, name="Cinnamon"):
+def sample_ingredient(user, name="Cinnamon") -> Ingredient:
     return Ingredient.objects.create(user=user, name=name)
 
 
@@ -101,3 +101,54 @@ class PrivateRecepieApiTests(TestCase):
 
         serializer = RecepieDetailSerializer(recepie)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_basic_recepie(self):
+        """Test creating recepie"""
+        payload = {
+            "title": "Choclate soup",
+            "prep_time": 30,
+            "price": 5.0,
+        }
+        res = self.client.post(RECEPIES_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recepie = Recepie.objects.get(id=res.data["id"])
+
+        for key in payload.keys():
+            self.assertEqual(payload[key], getattr(recepie, key))
+
+    def test_create_recepie_with_tags(self):
+        """Test creating a recepie with tags"""
+        tag1 = sample_tag(user=self.user, name="Vegan")
+        tag2 = sample_tag(user=self.user, name="Dessert")
+        payload = {
+            "title": "Gulab Jamun",
+            "tags": [tag1.id, tag2.id],
+            "prep_time": 60,
+            "price": 20.0
+        }
+        res = self.client.post(RECEPIES_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recepie = Recepie.objects.get(id=res.data["id"])
+        tags = recepie.tags.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_create_recepie_with_ingredients(self):
+        """Test creating recepie with ingredients"""
+        ingredient1 = sample_ingredient(user=self.user, name="Vegan")
+        ingredient2 = sample_ingredient(user=self.user, name="Dessert")
+        payload = {
+            "title": "Gulab Jamun",
+            "ingredients": [ingredient1.id, ingredient2.id],
+            "prep_time": 60,
+            "price": 20.0
+        }
+        res = self.client.post(RECEPIES_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recepie = Recepie.objects.get(id=res.data["id"])
+        ingredients = recepie.ingredients.all()
+        self.assertEqual(ingredients.count(), 2)
+        self.assertIn(ingredient1, ingredients)
+        self.assertIn(ingredient2, ingredients)
