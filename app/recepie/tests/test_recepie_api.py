@@ -152,3 +152,39 @@ class PrivateRecepieApiTests(TestCase):
         self.assertEqual(ingredients.count(), 2)
         self.assertIn(ingredient1, ingredients)
         self.assertIn(ingredient2, ingredients)
+
+    def test_update_recepie_update_partial(self):
+        """Test updating a recepie with patch"""
+        recepie = sample_recepie(user=self.user)
+        recepie.tags.add(sample_tag(user=self.user))
+        new_tag = sample_tag(user=self.user, name="Curry")
+
+        payload = {
+            "title": "Chicken Tikka",
+            "tags": [new_tag.id]
+        }
+        url = detail_url(recepie.id)
+        self.client.patch(url, payload)
+
+        recepie.refresh_from_db()
+        self.assertEqual(recepie.title, payload["title"])
+        tags = recepie.tags.all()
+        self.assertEqual(len(tags), 1)
+        self.assertIn(new_tag, tags)
+
+    def test_update_recepie_full(self):
+        """Test updating a recepie with put"""
+        recepie = sample_recepie(user=self.user)
+        recepie.tags.add(sample_tag(user=self.user))
+        payload = {
+            "title": "Not Chicken Tikka",
+            "prep_time": 25,
+            "price": 5.0,
+        }
+        url = detail_url(recepie.id)
+        self.client.put(url, payload)
+
+        recepie.refresh_from_db()
+        self.assertEqual(recepie.title, payload["title"])
+        self.assertEqual(recepie.prep_time, payload["prep_time"])
+        self.assertEqual(recepie.price, payload["price"])
