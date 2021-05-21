@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 
 from core.models import Recepie
 
-from .serializers import RecepieSerializer
+from ..serializers import RecepieSerializer
 
 RECEPIES_URL = reverse("recepie:recepie-list")
 
