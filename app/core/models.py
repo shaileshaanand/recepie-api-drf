@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -5,6 +8,13 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.conf import settings
+
+
+def recepie_image_file_path(instance, filename):
+    """Generate file path for nre recepie name"""
+    ext = Path(filename).suffix
+    new_filename = Path(uuid.uuid4()).with_suffix(ext)
+    return str(Path("uploads") / Path("recepie") / new_filename)
 
 
 class UserManager(BaseUserManager):
@@ -67,6 +77,7 @@ class Recepie(models.Model):
     link = models.CharField(max_length=1023, blank=True)
     ingredients = models.ManyToManyField(Ingredient)
     tags = models.ManyToManyField(Tag)
+    image = models.ImageField(null=True, upload_to=recepie_image_file_path)
 
     def __str__(self) -> str:
         return self.title
