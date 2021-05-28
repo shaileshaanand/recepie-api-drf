@@ -1,3 +1,8 @@
+import tempfile
+from pathlib import Path
+
+from PIL import Image
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -22,6 +27,11 @@ def sample_tag(user, name="Main Course") -> Tag:
 
 def sample_ingredient(user, name="Cinnamon") -> Ingredient:
     return Ingredient.objects.create(user=user, name=name)
+
+
+def image_upload_url(recepie_id):
+    """Return URL for recepie image upload"""
+    return reverse("recepie:recepie-upload-image", args=[recepie_id])
 
 
 def sample_recepie(user, **params) -> Recepie:
@@ -188,3 +198,47 @@ class PrivateRecepieApiTests(TestCase):
         self.assertEqual(recepie.title, payload["title"])
         self.assertEqual(recepie.prep_time, payload["prep_time"])
         self.assertEqual(recepie.price, payload["price"])
+
+
+class RecepieImageUploadTests(TestCase):
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "userrecepie@test.com",
+            "testpass@1234",
+        )
+        self.client.force_authenticate(self.user)
+        self.recepie = sample_recepie(user=self.user)
+
+    def tearDown(self) -> None:
+        self.recepie.image.delete()
+
+    def test_upload_image_to_recepie(self):
+        """Test uploading an image to recepie"""
+        url = image_upload_url(self.recepie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(
+                url,
+                {"image": ntf},
+                format="multipart"
+            )
+            self.recepie.refresh_from_db()
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertIn("image", res.data)
+            self.assertTrue(Path(self.recepie.image.path).exists())
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid Image"""
+        url = image_upload_url(self.recepie.id)
+        res = self.client.post(
+            url,
+            {
+                "image": "notimage"
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

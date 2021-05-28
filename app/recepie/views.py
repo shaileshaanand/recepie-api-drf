@@ -1,4 +1,6 @@
-from rest_framework import viewsets, mixins
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status, viewsets, mixins
 from rest_framework.authentication import TokenAuthentication
 
 from rest_framework.permissions import IsAuthenticated
@@ -49,9 +51,29 @@ class RecepieViewSet(viewsets.ModelViewSet):
         """Return appropriate serializer class"""
         if self.action == "retrieve":
             return serializers.RecepieDetailSerializer
-
+        elif self.action == "upload_image":
+            return serializers.RecepieImageSerializer
         return self.serializer_class
 
     def perform_create(self, serializer):
         """Create a new Recepie"""
         serializer.save(user=self.request.user)
+
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request, pk=None):
+        """Upload an image to a recepie"""
+        recepie = self.get_object()
+        serializer: RecepieSerializer = self.get_serializer(
+            recepie,
+            data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )

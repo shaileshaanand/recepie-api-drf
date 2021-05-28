@@ -13,7 +13,7 @@ from django.conf import settings
 def recepie_image_file_path(instance, filename):
     """Generate file path for nre recepie name"""
     ext = Path(filename).suffix
-    new_filename = Path(uuid.uuid4()).with_suffix(ext)
+    new_filename = Path(str(uuid.uuid4())).with_suffix(ext)
     return str(Path("uploads") / Path("recepie") / new_filename)
 
 
